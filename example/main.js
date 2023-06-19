@@ -191,6 +191,9 @@ const handleKeyDown = async (event) => {
   if (event.code === 'KeyC') {
     viewer.context.ifcCamera.toggleProjection();
   }
+    if (event.code === 'KeyF') {
+    viewer.IFC.selector.pickIfcItemsByID(0, [39168], true);
+  }
   if (event.code === 'KeyD') {
     
     //viewer.IFC.removeIfcModel(0);
