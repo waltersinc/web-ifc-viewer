@@ -180,6 +180,8 @@ inputElement.setAttribute('type', 'file');
 inputElement.classList.add('hidden');
 inputElement.addEventListener('change', loadIfc, false);
 
+viewer.IFC.selector.pickIfcItemsByID(0, [114024], true);
+
 const handleKeyDown = async (event) => {
   if (event.code === 'Delete') {
     viewer.clipper.deletePlane();
@@ -192,12 +194,11 @@ const handleKeyDown = async (event) => {
     viewer.context.ifcCamera.toggleProjection();
   }
     if (event.code === 'KeyF') {
-    viewer.IFC.selector.pickIfcItemsByID(0, [39168], true);
+    viewer.IFC.selector.pickIfcItemsByID(0, [114024], true);
   }
   if (event.code === 'KeyD') {
     
-    //viewer.IFC.removeIfcModel(0);
-     viewer.IFC.selector.pickIfcItemsByID(0, [39168], true);
+    viewer.IFC.removeIfcModel(0);
   }
 };
 
