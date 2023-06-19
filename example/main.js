@@ -1,4 +1,5 @@
 import { CameraProjections, IfcViewerAPI } from 'web-ifc-viewer';
+import { CSS2DRenderer, CSS2DObject } from './libs/examples/jsm/renderers/CSS2DRenderer.js';
 import { createSideMenuButton } from './utils/gui-creator';
 import {
   IFCSPACE, IFCOPENINGELEMENT, IFCFURNISHINGELEMENT, IFCWALL, IFCWINDOW, IFCCURTAINWALL, IFCMEMBER, IFCPLATE
@@ -180,8 +181,6 @@ inputElement.setAttribute('type', 'file');
 inputElement.classList.add('hidden');
 inputElement.addEventListener('change', loadIfc, false);
 
-viewer.IFC.selector.pickIfcItemsByID(0, [114024], true);
-
 const handleKeyDown = async (event) => {
   if (event.code === 'Delete') {
     viewer.clipper.deletePlane();
@@ -204,18 +203,162 @@ const handleKeyDown = async (event) => {
 
 window.onmousemove = () => viewer.IFC.selector.prePickIfcItem();
 window.onkeydown = handleKeyDown;
-window.ondblclick = async () => {
+//window.ondblclick = async () => {
 
-  if (viewer.clipper.active) {
-    viewer.clipper.createPlane();
-  } else {
-    const result = await viewer.IFC.selector.highlightIfcItem(true);
-    if (!result) return;
-    const { modelID, id } = result;
-    const props = await viewer.IFC.getProperties(modelID, id, true, false);
-    console.log(props);
-  }
-};
+//  if (viewer.clipper.active) {
+//    viewer.clipper.createPlane();
+//  } else {
+//    const result = await viewer.IFC.selector.highlightIfcItem(true);
+//    if (!result) return;
+//    const { modelID, id } = result;
+//    const props = await viewer.IFC.getProperties(modelID, id, true, false);
+//    console.log(props);
+//  }
+//};
+
+async function findShowDetails(event)
+{
+
+    const item = await viewer.IFC.pickIfcItem(true);
+console.log("findShowDetails");
+
+    return pick(
+        await viewer.IFC.getProperties(item.modelID, item.id, true)
+    );
+}
+
+window.ondblclick = async (event) => findShowDetails(event);
+
+
+function pick(item)
+{
+console.log(item);
+    async function loopz() {
+        var html = '';
+        var response = await Promise.all(item.psets.map(async (subItem, key) => {
+            var html = '';
+
+            if (hasAndIsNotEmptyOrNull(subItem, 'HasProperties')) {
+
+                for (const [sp, subProp] of Object.entries(subItem.HasProperties)) {
+                    var properties = await viewer.IFC.getProperties(
+                        viewer.IFC.getModelID(),
+                        subProp.value,
+                        true
+                    );
+				
+
+                    if (hasAndIsNotEmptyOrNull(properties, 'NominalValue') && properties.Name.value.startsWith('W_')) {  //cbeach - changed 'Name' to 'NominalValue' to only show fields that have values
+                        console.log(properties);
+                        html += looply(properties);
+                    }
+                }
+
+            }
+
+            return html;
+        }));
+
+        // Needed otherwise a comma will appear
+        // See https://stackoverflow.com/a/49643951/610880
+        html += response.join('');
+
+        return html;
+    }
+
+    loopz()
+        .then(function (html) {
+            output.innerHTML = html;
+            document.getElementById('message-container').style.display = 'inline-block';
+        });
+
+
+function looply(property)
+{
+    var html = '<ul>';
+
+    switch (property.constructor.name) {
+        default:
+        case 'IfcPropertySingleValue':
+            html += `<li><strong>${camel2title(property.Name.value)}</strong>: `;
+            if (hasAndIsNotEmptyOrNull(property, 'NominalValue')) {
+                html += `${property.NominalValue.value}`;
+                if (property.Unit !== null) {
+                    html += ` ${property.Unit}`;
+                }
+                html += `</li>`;
+            } else {
+                html += '&mdash;';
+            }
+            break;
+
+        case 'IfcPropertySet':
+            html += `<li><strong>${property.Name.value}</strong>`;
+            if (item.Description !== null) {
+                html += `<br />${property.Description.value}`;
+            }
+            html += '<ul>';
+            for (const [sp, subProperty] of Object.entries(property.HasProperties)) {
+                html += looply(subProperty);
+            }
+            html += '</ul></li>';
+            break;
+
+        case 'IfcElementQuantity':
+            html += `<li><strong>${property.Name.value}</strong>`;
+            html += '<ul>';
+            for (const [sp, subProperty] of Object.entries(property.Quantities)) {
+                html += looply(subProperty);
+            }
+            html += '</ul></li>';
+            break;
+
+        case 'Quantities':
+            html += `<li><strong>${property.Name.value}</strong>`;
+            html += '<ul>';
+            for (const [sp, subProperty] of Object.entries(property.HasProperties)) {
+                html += looply(subProperty);
+            }
+            html += '</ul></li>';
+            break;
+
+        case 'IfcQuantityLength':
+            html += `<li><strong>${property.Name.value}</strong>: ${property.LengthValue.value}`;
+            if (property.Unit !== null) {
+                html += ` ${property.Unit}`;
+            }
+            html += '</li>';
+            break;
+
+        case 'IfcQuantityArea':
+            html += `<li><strong>${property.Name.value}</strong>: ${property.AreaValue.value}`;
+            if (property.Unit !== null) {
+                html += ` ${property.Unit}`;
+            }
+            html += '</li>';
+            break;
+
+        case 'IfcQuantityVolume':
+            html += `<li><strong>${property.Name.value}</strong>: ${property.VolumeValue.value}`;
+            if (property.Unit !== null) {
+                html += ` ${property.Unit}`;
+            }
+            html += '</li>';
+            break;
+
+        case 'IfcQuantityWeight':
+            html += `<li><strong>${property.Name.value}</strong>: ${property.WeightValue.value}`;
+            if (property.Unit !== null) {
+                html += ` ${property.Unit}`;
+            }
+            html += '</li>';
+            break;
+    }
+
+    html += '</ul>';
+
+    return html;
+}
 
 //Setup UI
 const loadButton = createSideMenuButton('./resources/folder-icon.svg');
