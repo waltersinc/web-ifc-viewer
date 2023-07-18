@@ -1,5 +1,5 @@
 import { CameraProjections, IfcViewerAPI } from 'web-ifc-viewer';
-import { CSS2DRenderer, CSS2DObject } from './libs/examples/jsm/renderers/CSS2DRenderer.js';
+// import { CSS2DRenderer, CSS2DObject } from './libs/examples/jsm/renderers/CSS2DRenderer.js';
 import { createSideMenuButton } from './utils/gui-creator';
 import {
   IFCSPACE, IFCOPENINGELEMENT, IFCFURNISHINGELEMENT, IFCWALL, IFCWINDOW, IFCCURTAINWALL, IFCMEMBER, IFCPLATE
